@@ -1,4 +1,5 @@
-<img width="1317" height="928" alt="image" src="https://github.com/user-attachments/assets/acff838b-c065-4340-984f-b6e0ce484679" />
+<img width="1338" height="1044" alt="image" src="https://github.com/user-attachments/assets/1a2306da-6e12-4694-8b98-138d987134df" />
+
 
 
 UEFN Auto Type Organizer
