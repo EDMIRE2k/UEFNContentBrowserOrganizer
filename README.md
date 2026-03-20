@@ -77,7 +77,7 @@ Do not include quotes.
 
 This defines the destination folder where assets will be moved.
 
-Example: _Organized
+Example: _Organized (The underscore is mandatory)
 
 Result: /MyProject/_Organized/
 
