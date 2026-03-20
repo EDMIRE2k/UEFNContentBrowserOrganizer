@@ -16,6 +16,12 @@ import re
 # - Skips assets already inside the organized root
 # - Skips assets if the exact destination asset already exists already
 # - Optional filter: only include assets referenced by the current level
+# - Added types:
+#   - Level Sequences
+#   - Material Functions
+#   - Data Layer Assets
+#   - Material Parameter Collections
+#   - Widget Blueprints
 # ============================================================
 
 DEFAULT_SCAN_ROOT = "/amadeus"
@@ -101,10 +107,15 @@ SELECTABLE_TYPES = [
     "Meshes",
     "Materials",
     "MaterialInstances",
+    "MaterialFunctions",
+    "MaterialParameterCollections",
     "Blueprints",
+    "WidgetBlueprints",
     "Niagara",
     "Animations",
     "Data",
+    "DataLayerAssets",
+    "LevelSequences",
 ]
 
 CLASS_TO_TYPE = {
@@ -130,10 +141,20 @@ CLASS_TO_TYPE = {
     "MaterialInstanceConstant": "MaterialInstances",
     "MaterialInstance": "MaterialInstances",
 
+    # Material Functions
+    "MaterialFunction": "MaterialFunctions",
+    "MaterialFunctionMaterialLayer": "MaterialFunctions",
+    "MaterialFunctionMaterialLayerBlend": "MaterialFunctions",
+
+    # Material Parameter Collections
+    "MaterialParameterCollection": "MaterialParameterCollections",
+
     # Blueprints
     "Blueprint": "Blueprints",
-    "WidgetBlueprint": "Blueprints",
     "AnimBlueprint": "Blueprints",
+
+    # Widget Blueprints
+    "WidgetBlueprint": "WidgetBlueprints",
 
     # Niagara
     "NiagaraSystem": "Niagara",
@@ -152,6 +173,12 @@ CLASS_TO_TYPE = {
     "CurveLinearColor": "Data",
     "DataTable": "Data",
     "PrimaryDataAsset": "Data",
+
+    # Data Layers
+    "DataLayerAsset": "DataLayerAssets",
+
+    # Sequences
+    "LevelSequence": "LevelSequences",
 }
 
 def detect_selectable_type(asset_data) -> str:
@@ -179,6 +206,10 @@ CATEGORY_RULES = [
     ("Music", {"music", "theme", "track", "song", "score"}),
     ("Ambience", {"ambient", "ambience", "wind", "birds", "rain", "waterfall", "forest"}),
     ("SFX", {"sfx", "footstep", "hit", "pickup", "jump", "attack", "swing"}),
+    ("Functions", {"function", "functions"}),
+    ("Cinematics", {"sequence", "cinematic", "intro", "outro", "cutscene"}),
+    ("WorldPartition", {"datalayer", "data_layer", "partition"}),
+    ("GlobalParameters", {"mpc", "collection", "global"}),
 ]
 
 def tokenize_name(name: str):
@@ -201,16 +232,26 @@ def guess_category(asset_name: str, selectable_type: str) -> str:
         return "Surface"
     if selectable_type == "MaterialInstances":
         return "Surface"
+    if selectable_type == "MaterialFunctions":
+        return "Functions"
+    if selectable_type == "MaterialParameterCollections":
+        return "GlobalParameters"
     if selectable_type == "Meshes":
         return "Props"
     if selectable_type == "Blueprints":
         return "Gameplay"
+    if selectable_type == "WidgetBlueprints":
+        return "UI"
     if selectable_type == "Niagara":
         return "VFX"
     if selectable_type == "Animations":
         return "Characters"
     if selectable_type == "Data":
         return "General"
+    if selectable_type == "DataLayerAssets":
+        return "WorldPartition"
+    if selectable_type == "LevelSequences":
+        return "Cinematics"
 
     return "Misc"
 
@@ -278,9 +319,6 @@ def scan_redirectors(path: str):
 # ------------------------------------------------------------
 
 def get_current_level_package_name():
-    """
-    Returns the current editor world's package path, e.g. /Game/Maps/MyLevel
-    """
     try:
         world = unreal.EditorLevelLibrary.get_editor_world()
     except Exception as e:
@@ -300,10 +338,6 @@ def get_current_level_package_name():
     return world_path.split(".")[0]
 
 def get_current_level_referenced_packages():
-    """
-    Walk the dependency graph starting from the current level package.
-    Returns a set of package paths referenced by the level.
-    """
     ar = unreal.AssetRegistryHelpers.get_asset_registry()
     level_package = get_current_level_package_name()
 
@@ -461,7 +495,7 @@ class AutoTypeOrganizerApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("UEFN Auto Type Organizer")
-        self.root.geometry("1220x900")
+        self.root.geometry("1360x930")
         self.root.configure(bg="#1a1a2e")
         self.root.attributes("-topmost", True)
 
@@ -540,14 +574,49 @@ class AutoTypeOrganizerApp:
         types_frame.pack(fill="x", padx=14, pady=(0, 8))
 
         self.type_vars = {}
-        row = tk.Frame(types_frame, bg=bg)
-        row.pack(fill="x", padx=10, pady=6)
+        type_row_1 = tk.Frame(types_frame, bg=bg)
+        type_row_1.pack(fill="x", padx=10, pady=(6, 2))
+        type_row_2 = tk.Frame(types_frame, bg=bg)
+        type_row_2.pack(fill="x", padx=10, pady=(0, 6))
 
-        for t in SELECTABLE_TYPES:
+        row1_types = [
+            "Textures",
+            "Sounds",
+            "Meshes",
+            "Materials",
+            "MaterialInstances",
+            "MaterialFunctions",
+            "MaterialParameterCollections",
+        ]
+
+        row2_types = [
+            "Blueprints",
+            "WidgetBlueprints",
+            "Niagara",
+            "Animations",
+            "Data",
+            "DataLayerAssets",
+            "LevelSequences",
+        ]
+
+        for t in row1_types:
             var = tk.BooleanVar(value=True)
             self.type_vars[t] = var
             tk.Checkbutton(
-                row,
+                type_row_1,
+                text=t,
+                variable=var,
+                fg="#cfd8e3",
+                bg=bg,
+                selectcolor=ebg,
+                activebackground=bg
+            ).pack(side="left", padx=(0, 14))
+
+        for t in row2_types:
+            var = tk.BooleanVar(value=True)
+            self.type_vars[t] = var
+            tk.Checkbutton(
+                type_row_2,
                 text=t,
                 variable=var,
                 fg="#cfd8e3",
@@ -567,10 +636,10 @@ class AutoTypeOrganizerApp:
 
         columns = [
             ("Asset", 30),
-            ("Class", 20),
-            ("Type", 18),
-            ("Category", 14),
-            ("Destination", 52),
+            ("Class", 24),
+            ("Type", 28),
+            ("Category", 18),
+            ("Destination", 54),
         ]
         for text, width in columns:
             tk.Label(
@@ -586,7 +655,7 @@ class AutoTypeOrganizerApp:
         outer = tk.Frame(self.root, bg=bg)
         outer.pack(fill="both", expand=True, padx=14, pady=(0, 8))
 
-        self.canvas = tk.Canvas(outer, bg="#0f1724", highlightthickness=0, height=600)
+        self.canvas = tk.Canvas(outer, bg="#0f1724", highlightthickness=0, height=650)
         self.scrollbar = tk.Scrollbar(outer, orient="vertical", command=self.canvas.yview)
         self.list_frame = tk.Frame(self.canvas, bg="#0f1724")
 
@@ -628,10 +697,10 @@ class AutoTypeOrganizerApp:
         self.row_widgets.append(frame)
 
         tk.Label(frame, text=row["asset_name"], width=30, anchor="w", fg=fg, bg=bg, font=("Consolas", 9)).pack(side="left", padx=2)
-        tk.Label(frame, text=row["class_name"], width=20, anchor="w", fg=fg, bg=bg).pack(side="left", padx=2)
-        tk.Label(frame, text=row["selectable_type"], width=18, anchor="w", fg=fg, bg=bg).pack(side="left", padx=2)
-        tk.Label(frame, text=row["category"], width=14, anchor="w", fg=fg, bg=bg).pack(side="left", padx=2)
-        tk.Label(frame, text=row["dest_dir"], width=52, anchor="w", fg="#9ecbff", bg=bg, font=("Consolas", 8)).pack(side="left", padx=2)
+        tk.Label(frame, text=row["class_name"], width=24, anchor="w", fg=fg, bg=bg).pack(side="left", padx=2)
+        tk.Label(frame, text=row["selectable_type"], width=28, anchor="w", fg=fg, bg=bg).pack(side="left", padx=2)
+        tk.Label(frame, text=row["category"], width=18, anchor="w", fg=fg, bg=bg).pack(side="left", padx=2)
+        tk.Label(frame, text=row["dest_dir"], width=54, anchor="w", fg="#9ecbff", bg=bg, font=("Consolas", 8)).pack(side="left", padx=2)
 
     def scan(self):
         self.clear_rows()
@@ -666,10 +735,11 @@ class AutoTypeOrganizerApp:
 
             mode_text = "including unused assets" if include_unused_assets else "used by current level only"
 
+            count_text = ", ".join([f"{k}={v}" for k, v in sorted(counts.items())]) if counts else "No supported assets found"
+
             self.summary_lbl.configure(
                 text=(
-                    f"Found {len(self.plan)} assets to organize ({mode_text}). "
-                    + ", ".join([f"{k}={v}" for k, v in sorted(counts.items())])
+                    f"Found {len(self.plan)} assets to organize ({mode_text}). {count_text}"
                 )
             )
 
