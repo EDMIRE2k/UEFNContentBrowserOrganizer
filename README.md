@@ -170,9 +170,12 @@ How It Works
 
 Example
 
-Before: /MyProject/RandomFolder/SM_Tree_01 /MyProject/Stuff/T_Grass
+Before: /MyProject/RandomFolder/blahblahblah/heeheehaahaa/SM_Tree_01 
+
+/MyProject/RandomStuff/blahblahblah/heeheehaahaa/T_Grass
 
 After: /MyProject/_Organized/Meshes/Trees/SM_Tree_01
+
 /MyProject/_Organized/Textures/Foliage/T_Grass
 
 ------------------------------------------------------------------------
