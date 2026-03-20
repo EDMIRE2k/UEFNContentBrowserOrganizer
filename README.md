@@ -45,7 +45,7 @@ Installation
 
 1.  Download the Python script
 2.  Open your project in UEFN
-3.  Enable Python scripting: Edit → Editor Preferences → Python
+3.  Enable Python scripting: Project → Project Settings → Enable Python Scripting
 4.  Open the Python console at the bottom of the editor
 5.  Change the mode from: Python (REPL) → Python
 6.  Run the script using one of the following methods
