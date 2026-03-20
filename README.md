@@ -15,6 +15,7 @@ This tool scans a specified Content Browser folder and reorganizes
 assets into a consistent structure such as:
 
 /YourProject/_Organized/Meshes/Trees
+
 /YourProject/_Organized/Textures/Surface
 
 It is designed to reduce manual asset management, improve project
